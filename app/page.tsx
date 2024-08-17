@@ -13,7 +13,7 @@ const callClaudeAPI = async (query: string) => {
   return `Response to: ${query}`;
 };
 
-const Node = ({ id, text, position, onDrag, onQuery }: { id: any, text: any, position: any, onDrag: any, onQuery: any }) => {
+const Node = ({ id, text, position, onDrag, onQuery }: { id: number; text: string; position: { x: number; y: number; }; onDrag: any; onQuery: any; }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -67,10 +67,11 @@ const Node = ({ id, text, position, onDrag, onQuery }: { id: any, text: any, pos
         type="text"
         placeholder="Ask a follow-up question"
         className="w-full mb-2"
-        onKeyPress={(e) => {
+        onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
           if (e.key === 'Enter') {
-            onQuery(id, e.target.value);
-            e.target.value = '';
+            const input = e.target as HTMLInputElement;
+            onQuery(id, input.value);
+            input.value = '';
           }
         }}
       />
@@ -118,11 +119,32 @@ const QueryLabel = ({ query, x, y }: { query: any, x: any, y: any }) => {
   );
 };
 
+interface Node {
+  id: number;
+  text: string;
+  position: {
+    x: number;
+    y: number;
+  };
+}
+
+interface Edge {
+  from: number;
+  to: number;
+  query: string;
+}
+
+function isNodeWithPosition(node: any): node is { position: { x: number; y: number } } {
+  return node && typeof node.position === 'object' &&
+    typeof node.position.x === 'number' &&
+    typeof node.position.y === 'number';
+}
+
 export default function Home() {
   const [query, setQuery] = useState('');
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
-  const [error, setError] = useState(null);
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const handleQuery = async (parentId = null) => {
     try {
@@ -143,7 +165,7 @@ export default function Home() {
     }
   };
 
-  const handleDrag = (id, x, y) => {
+  const handleDrag = (id: number, x: number, y: number) => {
     setNodes(nodes.map(node =>
       node.id === id ? { ...node, position: { x, y } } : node
     ));
@@ -180,22 +202,27 @@ export default function Home() {
         {edges.map((edge, index) => {
           const fromNode = nodes.find(n => n.id === edge.from);
           const toNode = nodes.find(n => n.id === edge.to);
-          const midX = (fromNode.position.x + toNode.position.x) / 2 + 150;
-          const midY = (fromNode.position.y + toNode.position.y) / 2 + 50;
-          return (
-            <g key={index}>
-              <line
-                x1={fromNode.position.x + 150}
-                y1={fromNode.position.y + 50}
-                x2={toNode.position.x + 150}
-                y2={toNode.position.y + 50}
-                stroke="#4a5568"
-                strokeWidth="2"
-                markerEnd="url(#arrowhead)"
-              />
-              <QueryLabel query={edge.query} x={midX} y={midY} />
-            </g>
-          );
+
+          if (isNodeWithPosition(fromNode) && isNodeWithPosition(toNode)) {
+            const midX = (fromNode.position.x + toNode.position.x) / 2 + 150;
+            const midY = (fromNode.position.y + toNode.position.y) / 2 + 50;
+            return (
+              <g key={index}>
+                <line
+                  x1={fromNode.position.x + 150}
+                  y1={fromNode.position.y + 50}
+                  x2={toNode.position.x + 150}
+                  y2={toNode.position.y + 50}
+                  stroke="#4a5568"
+                  strokeWidth="2"
+                  markerEnd="url(#arrowhead)"
+                />
+                <QueryLabel query={edge.query} x={midX} y={midY} />
+              </g>
+            );
+          } else {
+            console.error('Could not find both nodes with valid positions for the edge:', edge);
+          }
         })}
       </svg>
 
@@ -206,7 +233,7 @@ export default function Home() {
           text={node.text}
           position={node.position}
           onDrag={handleDrag}
-          onQuery={(id, query) => {
+          onQuery={(id: any, query: string) => {
             setQuery(query);
             handleQuery(id);
           }}
