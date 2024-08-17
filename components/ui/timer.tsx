@@ -122,7 +122,7 @@ const PomodoroTimer = () => {
         <Button onClick={handlePlayPause} variant="ghost" size="sm" className="mb-2">
           {isRunning ? 'pause' : 'play'}
         </Button>
-        <div className={`${isRunning && !isHovering ? 'text-4xl font-thin' : 'text-6xl font-bold'}`}>
+        <div className={`${isRunning && !isHovering ? 'text-4xl font-normal' : 'text-6xl font-medium'}`}>
           {formatTime(time)}
         </div>
       </div>
