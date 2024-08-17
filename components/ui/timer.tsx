@@ -12,6 +12,7 @@ const PomodoroTimer = () => {
   const [hoveredDiv, setHoveredDiv] = useState(-1);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const sliderRef = useRef<HTMLDivElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     if (isRunning && time > 0) {
@@ -21,6 +22,7 @@ const PomodoroTimer = () => {
     } else if (time === 0) {
       if (intervalRef.current) clearInterval(intervalRef.current);
       setIsRunning(false);
+      playCompletionSound();
     }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -65,6 +67,28 @@ const PomodoroTimer = () => {
     setTime(0);
     setFocus('');
     setActiveDiv(-1);
+  };
+
+  const playCompletionSound = () => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    const context = audioContextRef.current;
+    const oscillator = context.createOscillator();
+    const gainNode = context.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(context.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(440, context.currentTime); // 440 Hz - A4 note
+
+    gainNode.gain.setValueAtTime(0, context.currentTime);
+    gainNode.gain.linearRampToValueAtTime(1, context.currentTime + 0.01);
+    gainNode.gain.linearRampToValueAtTime(0, context.currentTime + 0.5);
+
+    oscillator.start(context.currentTime);
+    oscillator.stop(context.currentTime + 0.5);
   };
 
   return (
@@ -122,7 +146,7 @@ const PomodoroTimer = () => {
         <Button onClick={handlePlayPause} variant="ghost" size="sm" className="mb-2">
           {isRunning ? 'pause' : 'play'}
         </Button>
-        <div className={`${isRunning && !isHovering ? 'text-4xl font-normal' : 'text-6xl font-medium'}`}>
+        <div className={`${isRunning && !isHovering ? 'text-4xl font-light' : 'text-6xl font-medium'}`}>
           {formatTime(time)}
         </div>
       </div>
