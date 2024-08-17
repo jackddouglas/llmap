@@ -91,43 +91,29 @@ const Node = ({ id, text, position, onDrag, onQuery, isSelected, onSelect }: Nod
   );
 };
 
-const QueryLabel = ({ query, x, y }: { query: string, x: number, y: number }) => {
-  const labelRef = useRef<SVGTextElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+interface EdgeLabelProps {
+  query: string;
+  fromPosition: { x: number; y: number };
+  toPosition: { x: number; y: number };
+}
 
-  useEffect(() => {
-    if (labelRef.current) {
-      setDimensions({
-        width: labelRef.current.getBBox().width,
-        height: labelRef.current.getBBox().height
-      });
-    }
-  }, [query]);
+const EdgeLabel = ({ query, fromPosition, toPosition }: EdgeLabelProps) => {
+  const midX = (fromPosition.x + toPosition.x) / 2;
+  const midY = (fromPosition.y + toPosition.y) / 2;
 
   return (
-    <g>
-      <rect
-        x={x - dimensions.width / 2 - 10}
-        y={y - dimensions.height / 2 - 5}
-        width={dimensions.width + 20}
-        height={dimensions.height + 10}
-        fill="#4a5568"
-        rx="15"
-        ry="15"
-      />
-      <text
-        ref={labelRef}
-        x={x}
-        y={y}
-        fontSize="14"
-        fill="white"
-        fontWeight="bold"
-        textAnchor="middle"
-        dominantBaseline="middle"
-      >
-        {query}
-      </text>
-    </g>
+    <div
+      className="absolute bg-gray-800 text-white px-2 py-1 rounded-md text-sm"
+      style={{
+        left: `${midX}px`,
+        top: `${midY}px`,
+        transform: 'translate(-50%, -50%)',
+        maxWidth: '200px',
+        wordWrap: 'break-word',
+      }}
+    >
+      {query}
+    </div>
   );
 };
 
@@ -144,6 +130,8 @@ interface Edge {
   from: number;
   to: number;
   query: string;
+  fromPosition: { x: number; y: number };
+  toPosition: { x: number; y: number };
 }
 
 function isNodeWithPosition(node: Partial<Node>): node is Node {
@@ -171,9 +159,18 @@ export default function Home() {
           ? { x: window.innerWidth / 2 - 150, y: window.innerHeight / 2 - 100 }
           : { x: Math.random() * (window.innerWidth - 350), y: Math.random() * (window.innerHeight - 200) },
       };
-      setNodes([...nodes, newNode]);
+      setNodes(prevNodes => [...prevNodes, newNode]);
       if (parentId !== null) {
-        setEdges([...edges, { from: parentId, to: newNode.id, query }]);
+        const parentNode = nodes.find(node => node.id === parentId);
+        if (parentNode) {
+          setEdges(prevEdges => [...prevEdges, {
+            from: parentId,
+            to: newNode.id,
+            query,
+            fromPosition: parentNode.position,
+            toPosition: newNode.position,
+          }]);
+        }
       } else {
         setFirstQuery(query);
       }
@@ -184,9 +181,18 @@ export default function Home() {
   };
 
   const handleDrag = (id: number, x: number, y: number) => {
-    setNodes(nodes.map(node =>
+    setNodes(prevNodes => prevNodes.map(node =>
       node.id === id ? { ...node, position: { x, y } } : node
     ));
+    setEdges(prevEdges => prevEdges.map(edge => {
+      if (edge.from === id) {
+        return { ...edge, fromPosition: { x, y } };
+      }
+      if (edge.to === id) {
+        return { ...edge, toPosition: { x, y } };
+      }
+      return edge;
+    }));
   };
 
   const handleNodeSelect = (id: number) => {
@@ -208,34 +214,36 @@ export default function Home() {
       <div className="absolute top-4 right-4 z-10">
         <PomodoroTimer />
       </div>
-      <div className="mb-4 flex flex-col items-start">
-        <div className="flex items-center mb-2">
-          <Input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Enter your query"
-            className="mr-2"
-          />
-          <Button onClick={() => handleQuery()} className="mr-2">Submit Query</Button>
-          <Button 
-            onClick={handleDeleteSelected} 
-            variant="destructive" 
-            disabled={selectedNodes.length === 0}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete Selected ({selectedNodes.length})
-          </Button>
-        </div>
-        {firstQuery && (
-          <div className="text-sm font-medium text-gray-500">
-            First Query: {firstQuery}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-3xl">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="flex items-center w-full">
+            <Input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Enter your query"
+              className="flex-grow mr-2"
+            />
+            <Button onClick={() => handleQuery()} className="mr-2">Submit Query</Button>
+            <Button 
+              onClick={handleDeleteSelected} 
+              variant="destructive" 
+              disabled={selectedNodes.length === 0}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Selected ({selectedNodes.length})
+            </Button>
           </div>
-        )}
+          {firstQuery && (
+            <div className="text-sm font-medium text-gray-500 text-center w-full">
+              First Query: {firstQuery}
+            </div>
+          )}
+        </div>
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
@@ -249,32 +257,28 @@ export default function Home() {
             <polygon points="0 0, 10 3.5, 0 7" fill="#4a5568" />
           </marker>
         </defs>
-        {edges.map((edge, index) => {
-          const fromNode = nodes.find(n => n.id === edge.from);
-          const toNode = nodes.find(n => n.id === edge.to);
-
-          if (isNodeWithPosition(fromNode) && isNodeWithPosition(toNode)) {
-            const midX = (fromNode.position.x + toNode.position.x) / 2 + 150;
-            const midY = (fromNode.position.y + toNode.position.y) / 2 + 50;
-            return (
-              <g key={index}>
-                <line
-                  x1={fromNode.position.x + 150}
-                  y1={fromNode.position.y + 50}
-                  x2={toNode.position.x + 150}
-                  y2={toNode.position.y + 50}
-                  stroke="#4a5568"
-                  strokeWidth="2"
-                  markerEnd="url(#arrowhead)"
-                />
-                <QueryLabel query={edge.query} x={midX} y={midY} />
-              </g>
-            );
-          } else {
-            console.error('Could not find both nodes with valid positions for the edge:', edge);
-          }
-        })}
+        {edges.map((edge, index) => (
+          <line
+            key={index}
+            x1={edge.fromPosition.x + 150}
+            y1={edge.fromPosition.y + 50}
+            x2={edge.toPosition.x + 150}
+            y2={edge.toPosition.y + 50}
+            stroke="#4a5568"
+            strokeWidth="2"
+            markerEnd="url(#arrowhead)"
+          />
+        ))}
       </svg>
+
+      {edges.map((edge, index) => (
+        <EdgeLabel
+          key={`label-${index}`}
+          query={edge.query}
+          fromPosition={edge.fromPosition}
+          toPosition={edge.toPosition}
+        />
+      ))}
 
       {nodes.map(node => (
         <Node
