@@ -68,7 +68,7 @@ const PomodoroTimer = () => {
 
   return (
     <div 
-      className="bg-white p-4 rounded-lg shadow-md max-w-md mx-auto"
+      className="bg-white p-4 rounded-lg shadow-md min-w-96 max-w-md mx-auto"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >

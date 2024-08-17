@@ -174,7 +174,9 @@ export default function Home() {
 
   return (
     <div className="relative w-full h-screen p-4 overflow-hidden">
-      <PomodoroTimer />
+      <div className="absolute top-4 right-4 z-10">
+        <PomodoroTimer />
+      </div>
       <div className="mb-4">
         <Input
           type="text"
