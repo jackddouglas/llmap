@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,12 +14,22 @@ const callClaudeAPI = async (query: string) => {
   return `Response to: ${query}`;
 };
 
-const Node = ({ id, text, position, onDrag, onQuery }: { id: number; text: string; position: { x: number; y: number; }; onDrag: any; onQuery: any; }) => {
+interface NodeProps {
+  id: number;
+  text: string;
+  position: { x: number; y: number };
+  onDrag: (id: number, x: number, y: number) => void;
+  onQuery: (id: number, query: string) => void;
+  isSelected: boolean;
+  onSelect: (id: number) => void;
+}
+
+const Node = ({ id, text, position, onDrag, onQuery, isSelected, onSelect }: NodeProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const nodeRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseDown = (e: any) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsDragging(true);
     const rect = nodeRef.current?.getBoundingClientRect();
     if (rect) {
@@ -30,7 +40,7 @@ const Node = ({ id, text, position, onDrag, onQuery }: { id: number; text: strin
     }
   };
 
-  const handleMouseMove = (e: any) => {
+  const handleMouseMove = (e: MouseEvent) => {
     if (isDragging) {
       const newX = e.clientX - offset.x;
       const newY = e.clientY - offset.y;
@@ -59,9 +69,10 @@ const Node = ({ id, text, position, onDrag, onQuery }: { id: number; text: strin
   return (
     <div
       ref={nodeRef}
-      className="absolute p-6 bg-white border border-gray-300 rounded-lg shadow-lg cursor-move"
+      className={`absolute p-6 bg-white border ${isSelected ? 'border-blue-500' : 'border-gray-300'} rounded-lg shadow-lg cursor-move`}
       style={{ left: `${position.x}px`, top: `${position.y}px`, width: '300px' }}
       onMouseDown={handleMouseDown}
+      onClick={() => onSelect(id)}
     >
       <h3 className="text-lg font-semibold mb-3">{text}</h3>
       <Input
@@ -80,7 +91,7 @@ const Node = ({ id, text, position, onDrag, onQuery }: { id: number; text: strin
   );
 };
 
-const QueryLabel = ({ query, x, y }: { query: any, x: any, y: any }) => {
+const QueryLabel = ({ query, x, y }: { query: string, x: number, y: number }) => {
   const labelRef = useRef<SVGTextElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
@@ -135,7 +146,7 @@ interface Edge {
   query: string;
 }
 
-function isNodeWithPosition(node: any): node is { position: { x: number; y: number } } {
+function isNodeWithPosition(node: Partial<Node>): node is Node {
   return node && typeof node.position === 'object' &&
     typeof node.position.x === 'number' &&
     typeof node.position.y === 'number';
@@ -146,19 +157,25 @@ export default function Home() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [selectedNodes, setSelectedNodes] = useState<number[]>([]);
+  const [firstQuery, setFirstQuery] = useState<string | null>(null);
 
-  const handleQuery = async (parentId = null) => {
+  const handleQuery = async (parentId: number | null = null) => {
     try {
       setError(null);
       const response = await callClaudeAPI(query);
       const newNode = {
         id: Date.now(),
         text: response,
-        position: { x: Math.random() * (window.innerWidth - 350), y: Math.random() * (window.innerHeight - 200) },
+        position: parentId === null 
+          ? { x: window.innerWidth / 2 - 150, y: window.innerHeight / 2 - 100 }
+          : { x: Math.random() * (window.innerWidth - 350), y: Math.random() * (window.innerHeight - 200) },
       };
       setNodes([...nodes, newNode]);
       if (parentId !== null) {
         setEdges([...edges, { from: parentId, to: newNode.id, query }]);
+      } else {
+        setFirstQuery(query);
       }
       setQuery('');
     } catch (err) {
@@ -172,20 +189,49 @@ export default function Home() {
     ));
   };
 
+  const handleNodeSelect = (id: number) => {
+    setSelectedNodes(prev => 
+      prev.includes(id) ? prev.filter(nodeId => nodeId !== id) : [...prev, id]
+    );
+  };
+
+  const handleDeleteSelected = () => {
+    setNodes(nodes.filter(node => !selectedNodes.includes(node.id)));
+    setEdges(edges.filter(edge => 
+      !selectedNodes.includes(edge.from) && !selectedNodes.includes(edge.to)
+    ));
+    setSelectedNodes([]);
+  };
+
   return (
     <div className="relative w-full h-screen p-4 overflow-hidden">
       <div className="absolute top-4 right-4 z-10">
         <PomodoroTimer />
       </div>
-      <div className="mb-4">
-        <Input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Enter your query"
-          className="mr-2"
-        />
-        <Button onClick={() => handleQuery()}>Submit Query</Button>
+      <div className="mb-4 flex flex-col items-start">
+        <div className="flex items-center mb-2">
+          <Input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Enter your query"
+            className="mr-2"
+          />
+          <Button onClick={() => handleQuery()} className="mr-2">Submit Query</Button>
+          <Button 
+            onClick={handleDeleteSelected} 
+            variant="destructive" 
+            disabled={selectedNodes.length === 0}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete Selected ({selectedNodes.length})
+          </Button>
+        </div>
+        {firstQuery && (
+          <div className="text-sm font-medium text-gray-500">
+            First Query: {firstQuery}
+          </div>
+        )}
       </div>
 
       {error && (
@@ -237,12 +283,14 @@ export default function Home() {
           text={node.text}
           position={node.position}
           onDrag={handleDrag}
-          onQuery={(id: any, query: string) => {
+          onQuery={(id: number, query: string) => {
             setQuery(query);
             handleQuery(id);
           }}
+          isSelected={selectedNodes.includes(node.id)}
+          onSelect={handleNodeSelect}
         />
       ))}
     </div>
   );
-};
+}
