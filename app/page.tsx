@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import PomodoroTimer from '@/components/ui/timer';
 import { callLLM } from '@/lib/worker';
 
-const Node = ({ id, text, position, onDrag, onQuery }: { id: number; text: string; position: { x: number; y: number; }; onDrag: any; onQuery: any; }) => {
+const Node = ({ id, text, position, onDrag, onQuery }: { id: number; text: string; position: { x: number; y: number; }; onDrag: any; onQuery: (id: number, query: string) => void; }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -141,10 +141,10 @@ export default function Home() {
   const [edges, setEdges] = useState<Edge[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const handleQuery = async (parentId = null) => {
+  const handleQuery = async (newQuery: string, parentId: number | null = null) => {
     try {
       setError(null);
-      const response = await callLLM(query);
+      const response = await callLLM(newQuery);
       const newNode = {
         id: Date.now(),
         text: response,
@@ -152,11 +152,11 @@ export default function Home() {
       };
       setNodes([...nodes, newNode]);
       if (parentId !== null) {
-        setEdges([...edges, { from: parentId, to: newNode.id, query }]);
+        setEdges([...edges, { from: parentId, to: newNode.id, query: newQuery }]);
       }
       setQuery('');
     } catch (err) {
-      setError('Failed to get response from Claude API. Please try again.');
+      setError('Failed to get response from LLM. Please try again.');
     }
   };
 
@@ -179,7 +179,7 @@ export default function Home() {
           placeholder="Enter your query"
           className="mr-2"
         />
-        <Button onClick={() => handleQuery()}>Submit Query</Button>
+        <Button onClick={() => handleQuery(query)}>Submit Query</Button>
       </div>
 
       {error && (
@@ -231,9 +231,8 @@ export default function Home() {
           text={node.text}
           position={node.position}
           onDrag={handleDrag}
-          onQuery={(id: any, query: string) => {
-            setQuery(query);
-            handleQuery(id);
+          onQuery={(id: number, query: string) => {
+            handleQuery(query, id);
           }}
         />
       ))}
