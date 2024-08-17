@@ -6,13 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PomodoroTimer from '@/components/ui/timer';
-
-// Mock function for Claude API call
-const callClaudeAPI = async (query: string) => {
-  // In a real application, replace this with an actual API call
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return `Response to: ${query}`;
-};
+import { callLLM } from '@/lib/worker';
 
 const Node = ({ id, text, position, onDrag, onQuery }: { id: number; text: string; position: { x: number; y: number; }; onDrag: any; onQuery: any; }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -150,7 +144,7 @@ export default function Home() {
   const handleQuery = async (parentId = null) => {
     try {
       setError(null);
-      const response = await callClaudeAPI(query);
+      const response = await callLLM(query);
       const newNode = {
         id: Date.now(),
         text: response,
