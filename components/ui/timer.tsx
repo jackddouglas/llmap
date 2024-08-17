@@ -50,8 +50,8 @@ const PomodoroTimer = () => {
     }
   };
 
-  const handlePause = () => {
-    setIsRunning(false);
+  const handlePlayPause = () => {
+    setIsRunning(prevState => !prevState);
   };
 
   const handleRestart = () => {
@@ -119,8 +119,8 @@ const PomodoroTimer = () => {
       )}
       
       <div className="flex justify-between items-end">
-        <Button onClick={handlePause} variant="ghost" size="sm" className="mb-2">
-          pause
+        <Button onClick={handlePlayPause} variant="ghost" size="sm" className="mb-2">
+          {isRunning ? 'pause' : 'play'}
         </Button>
         <div className={`${isRunning && !isHovering ? 'text-4xl font-thin' : 'text-6xl font-bold'}`}>
           {formatTime(time)}
