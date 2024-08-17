@@ -5,6 +5,7 @@ import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import PomodoroTimer from '@/components/ui/timer';
 
 // Mock function for Claude API call
 const callClaudeAPI = async (query: string) => {
@@ -173,6 +174,7 @@ export default function Home() {
 
   return (
     <div className="relative w-full h-screen p-4 overflow-hidden">
+      <PomodoroTimer />
       <div className="mb-4">
         <Input
           type="text"
