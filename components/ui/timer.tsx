@@ -9,6 +9,7 @@ const PomodoroTimer = () => {
   const [focus, setFocus] = useState('');
   const [isHovering, setIsHovering] = useState(false);
   const [activeDiv, setActiveDiv] = useState(-1);
+  const [hoveredDiv, setHoveredDiv] = useState(-1);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const sliderRef = useRef<HTMLDivElement | null>(null);
 
@@ -37,9 +38,9 @@ const PomodoroTimer = () => {
     const rect = sliderRef.current?.getBoundingClientRect();
     if (rect) {
       const x = e.clientX - rect.left;
-      const divIndex = Math.floor((x / rect.width) * 100);
-      setActiveDiv(Math.min(Math.max(divIndex, 0), 99));
-      setTime((divIndex + 1) * 36); // 36 seconds per div (3600 seconds / 100 divs)
+      const divIndex = Math.floor((x / rect.width) * 50);
+      setActiveDiv(Math.min(Math.max(divIndex, 0), 49));
+      setTime((divIndex + 1) * 72); // 72 seconds per div (3600 seconds / 50 divs)
     }
   };
 
@@ -88,10 +89,15 @@ const PomodoroTimer = () => {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
           >
-            {[...Array(100)].map((_, index) => (
+            {[...Array(50)].map((_, index) => (
               <div 
                 key={index}
-                className={`h-8 w-full mx-px ${index <= activeDiv ? 'bg-red-500' : 'bg-gray-200'}`}
+                className={`h-8 w-full mx-px ${
+                  index <= activeDiv ? 'bg-red-500' : 
+                  index === hoveredDiv ? 'bg-red-300' : 'bg-gray-200'
+                }`}
+                onMouseEnter={() => setHoveredDiv(index)}
+                onMouseLeave={() => setHoveredDiv(-1)}
               />
             ))}
           </div>
