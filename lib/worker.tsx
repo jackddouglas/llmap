@@ -20,7 +20,6 @@ class PipelineSingleton {
 export const callLLM = async (query: string) => {
   const generator = await PipelineSingleton.getInstance();
 
-  // Adjust these parameters to get longer responses
   const output = await generator(query, {
     max_new_tokens: 100,  // Increase this for longer responses
     temperature: 0.7,     // Adjust for more varied responses
