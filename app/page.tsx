@@ -64,11 +64,11 @@ const Node = ({ id, text, position, onDrag, onQuery, isSelected, onSelect }: Nod
     <div
       ref={nodeRef}
       className={`absolute p-6 bg-white border ${isSelected ? 'border-blue-500' : 'border-gray-300'} rounded-lg shadow-lg cursor-move`}
-      style={{ left: `${position.x}px`, top: `${position.y}px`, width: '300px' }}
+      style={{ left: `${position.x}px`, top: `${position.y}px`,  }}
       onMouseDown={handleMouseDown}
       onClick={() => onSelect(id)}
     >
-      <h3 className="text-lg font-semibold mb-3">{text}</h3>
+      <h3 className="text-sm font-semibold mb-3 overflow-auto">{text}</h3>
       <Input
         type="text"
         placeholder="Ask a follow-up question"
