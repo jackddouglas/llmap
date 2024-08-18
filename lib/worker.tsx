@@ -18,26 +18,18 @@ class PipelineSingleton {
 
 // Function to generate query response
 export const callLLM = async (query: string) => {
-  // In a real application, replace this with an actual API call
-  // await new Promise(resolve => setTimeout(resolve, 1000));
-  // return `Response to: ${query}`;
-
-  // Retrieve the text generator pipeline. When called for the first time,
-  // this will load the pipeline and save it for future use.
   const generator = await PipelineSingleton.getInstance();
 
-  // Actually perform the classification
-  const output = await generator(query);
+  // Adjust these parameters to get longer responses
+  const output = await generator(query, {
+    max_new_tokens: 100,  // Increase this for longer responses
+    temperature: 0.7,     // Adjust for more varied responses
+    top_p: 0.9,           // Nucleus sampling
+    repetition_penalty: 1.2,  // Discourage repetition
+  });
 
-  // Send the output back to the main thread
-  // const response = {
-  //   status: 'complete',
-  //   output: output,
-  // };
-
-  // Extract the generated text from the output
   if (Array.isArray(output) && output.length > 0 && output[0].generated_text) {
-    return output[0].generated_text;
+    return output[0].generated_text.trim();
   } else {
     throw new Error("Unexpected output format from text generation model");
   }
