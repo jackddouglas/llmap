@@ -6,13 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PomodoroTimer from '@/components/ui/timer';
-
-// Mock function for Claude API call
-const callClaudeAPI = async (query: string) => {
-  // In a real application, replace this with an actual API call
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return `Response to: ${query}`;
-};
+import { callLLM } from '@/lib/worker';
 
 interface NodeProps {
   id: number;
@@ -134,12 +128,6 @@ interface Edge {
   toPosition: { x: number; y: number };
 }
 
-function isNodeWithPosition(node: Partial<Node>): node is Node {
-  return node && typeof node.position === 'object' &&
-    typeof node.position.x === 'number' &&
-    typeof node.position.y === 'number';
-}
-
 export default function Home() {
   const [query, setQuery] = useState('');
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -151,7 +139,7 @@ export default function Home() {
   const handleQuery = async (parentId: number | null = null) => {
     try {
       setError(null);
-      const response = await callClaudeAPI(query);
+      const response = await callLLM(query);
       const newNode = {
         id: Date.now(),
         text: response,
@@ -176,7 +164,7 @@ export default function Home() {
       }
       setQuery('');
     } catch (err) {
-      setError('Failed to get response from Claude API. Please try again.');
+      setError('Failed to get response from LLM. Please try again.');
     }
   };
 
