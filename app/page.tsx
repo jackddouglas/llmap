@@ -178,9 +178,23 @@ export default function Home() {
     try {
       setError(null);
       const response = await callLLM(query);
-      const newPosition = parentId === null
-        ? snapToGrid(window.innerWidth / 2 - 150, window.innerHeight / 2 - 100)
-        : snapToGrid(Math.random() * (window.innerWidth - 350), Math.random() * (window.innerHeight - 200));
+      let newPosition: { x: number; y: number };
+
+      if (parentId === null) {
+        newPosition = snapToGrid(window.innerWidth / 2 - 150, 100); // Start at the top
+      } else {
+        const parentNode = nodes.find(node => node.id === parentId);
+        if (parentNode) {
+          const horizontalOffset = 100; // Add some horizontal offset
+          const verticalSpacing = 300; // Increase vertical spacing
+          newPosition = snapToGrid(
+            parentNode.position.x + horizontalOffset,
+            parentNode.position.y + verticalSpacing
+          );
+        } else {
+          newPosition = snapToGrid(Math.random() * (window.innerWidth - 350), Math.random() * (window.innerHeight - 200));
+        }
+      }
       
       const newNode = {
         id: Date.now(),
