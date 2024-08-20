@@ -98,6 +98,11 @@ const PomodoroTimer = () => {
         setIsMinimized(prev => !prev);
     };
 
+    const handlePresetClick = (minutes: number) => {
+        setTime(minutes * 60);
+        setActiveDiv(minutes - 1);
+    };
+
     if (isMinimized) {
         return (
             <Button 
@@ -156,14 +161,23 @@ const PomodoroTimer = () => {
                     </div>
 
                     <div className="flex justify-between items-center text-xs mb-4">
-                        <div className="flex space-x-2">
+                        {isRunning ? (
                             <Button onClick={handleCancel} variant="ghost" size="sm">
                                 Cancel
                             </Button>
-                            <Button onClick={handleRestart} variant="ghost" size="sm">
-                                Restart
-                            </Button>
-                        </div>
+                        ) : (
+                            <div className="flex space-x-2">
+                                <Button onClick={() => handlePresetClick(5)} variant="ghost" size="sm">
+                                    5 min
+                                </Button>
+                                <Button onClick={() => handlePresetClick(10)} variant="ghost" size="sm">
+                                    10 min
+                                </Button>
+                                <Button onClick={() => handlePresetClick(25)} variant="ghost" size="sm">
+                                    25 min
+                                </Button>
+                            </div>
+                        )}
                         <Button variant="ghost" size="sm">
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>

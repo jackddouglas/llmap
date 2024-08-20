@@ -143,6 +143,11 @@ export default function Home() {
   const [selectedNodes, setSelectedNodes] = useState<number[]>([]);
   const [firstQuery, setFirstQuery] = useState<string | null>(null);
   const [gridPoints, setGridPoints] = useState<GridPoint[]>([]);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    setAudio(new Audio('/sounds/click.wav'));
+  }, []);
 
   const generateGrid = useCallback(() => {
     const gridSize = 50;
@@ -183,6 +188,11 @@ export default function Home() {
         position: newPosition,
       };
       setNodes(prevNodes => [...prevNodes, newNode]);
+      
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play();
+      }
       
       if (parentId !== null) {
         const parentNode = nodes.find(node => node.id === parentId);
