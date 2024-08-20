@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { AlertCircle, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -63,12 +63,14 @@ const Node = ({ id, text, position, onDrag, onQuery, isSelected, onSelect }: Nod
   return (
     <div
       ref={nodeRef}
-      className={`absolute p-6 bg-white border ${isSelected ? 'border-blue-500' : 'border-gray-300'} rounded-lg shadow-lg cursor-move`}
-      style={{ left: `${position.x}px`, top: `${position.y}px`,  }}
+      className={`max-w-96 absolute p-6 bg-white border ${isSelected ? 'border-blue-500' : 'border-gray-300'} rounded-lg shadow-lg cursor-move w-[80rem]`}
+      style={{ left: `${position.x}px`, top: `${position.y}px` }}
       onMouseDown={handleMouseDown}
       onClick={() => onSelect(id)}
     >
-      <h3 className="text-sm font-semibold mb-3 overflow-auto">{text}</h3>
+      <div className="max-w-7xl">
+        <h3 className="text-sm font-medium mb-3">{text}</h3>
+      </div>
       <Input
         type="text"
         placeholder="Ask a follow-up question"
@@ -128,6 +130,11 @@ interface Edge {
   toPosition: { x: number; y: number };
 }
 
+interface GridPoint {
+  x: number;
+  y: number;
+}
+
 export default function Home() {
   const [query, setQuery] = useState('');
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -135,19 +142,72 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [selectedNodes, setSelectedNodes] = useState<number[]>([]);
   const [firstQuery, setFirstQuery] = useState<string | null>(null);
+  const [gridPoints, setGridPoints] = useState<GridPoint[]>([]);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    setAudio(new Audio('/sounds/click.wav'));
+  }, []);
+
+  const generateGrid = useCallback(() => {
+    const gridSize = 50;
+    const points: GridPoint[] = [];
+    for (let x = 0; x < window.innerWidth; x += gridSize) {
+      for (let y = 0; y < window.innerHeight; y += gridSize) {
+        points.push({ x, y });
+      }
+    }
+    setGridPoints(points);
+  }, []);
+
+  useEffect(() => {
+    generateGrid();
+    window.addEventListener('resize', generateGrid);
+    return () => window.removeEventListener('resize', generateGrid);
+  }, [generateGrid]);
+
+  const snapToGrid = (x: number, y: number): GridPoint => {
+    const gridSize = 50;
+    return {
+      x: Math.round(x / gridSize) * gridSize,
+      y: Math.round(y / gridSize) * gridSize
+    };
+  };
 
   const handleQuery = async (parentId: number | null = null) => {
     try {
       setError(null);
       const response = await callLLM(query);
+      let newPosition: { x: number; y: number };
+
+      if (parentId === null) {
+        newPosition = snapToGrid(window.innerWidth / 2 - 150, 100); // Start at the top
+      } else {
+        const parentNode = nodes.find(node => node.id === parentId);
+        if (parentNode) {
+          const horizontalOffset = 100; // Add some horizontal offset
+          const verticalSpacing = 300; // Increase vertical spacing
+          newPosition = snapToGrid(
+            parentNode.position.x + horizontalOffset,
+            parentNode.position.y + verticalSpacing
+          );
+        } else {
+          newPosition = snapToGrid(Math.random() * (window.innerWidth - 350), Math.random() * (window.innerHeight - 200));
+        }
+      }
+      
       const newNode = {
         id: Date.now(),
         text: response,
-        position: parentId === null 
-          ? { x: window.innerWidth / 2 - 150, y: window.innerHeight / 2 - 100 }
-          : { x: Math.random() * (window.innerWidth - 350), y: Math.random() * (window.innerHeight - 200) },
+        position: newPosition,
       };
       setNodes(prevNodes => [...prevNodes, newNode]);
+      
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play();
+      }
+      
       if (parentId !== null) {
         const parentNode = nodes.find(node => node.id === parentId);
         if (parentNode) {
@@ -156,7 +216,7 @@ export default function Home() {
             to: newNode.id,
             query,
             fromPosition: parentNode.position,
-            toPosition: newNode.position,
+            toPosition: newPosition,
           }]);
         }
       } else {
@@ -169,15 +229,17 @@ export default function Home() {
   };
 
   const handleDrag = (id: number, x: number, y: number) => {
+    const snappedPosition = snapToGrid(x, y);
+
     setNodes(prevNodes => prevNodes.map(node =>
-      node.id === id ? { ...node, position: { x, y } } : node
+      node.id === id ? { ...node, position: snappedPosition } : node
     ));
     setEdges(prevEdges => prevEdges.map(edge => {
       if (edge.from === id) {
-        return { ...edge, fromPosition: { x, y } };
+        return { ...edge, fromPosition: snappedPosition };
       }
       if (edge.to === id) {
-        return { ...edge, toPosition: { x, y } };
+        return { ...edge, toPosition: snappedPosition };
       }
       return edge;
     }));
@@ -199,6 +261,15 @@ export default function Home() {
 
   return (
     <div className="relative w-full h-screen p-4 overflow-hidden">
+      {/* Render grid points */}
+      {gridPoints.map((point, index) => (
+        <div
+          key={index}
+          className="absolute w-1 h-1 bg-gray-200 rounded-full"
+          style={{ left: `${point.x}px`, top: `${point.y}px` }}
+        />
+      ))}
+
       <div className="absolute top-4 right-4 z-10">
         <PomodoroTimer />
       </div>

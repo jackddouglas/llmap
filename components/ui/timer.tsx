@@ -43,9 +43,9 @@ const PomodoroTimer = () => {
         const rect = sliderRef.current?.getBoundingClientRect();
         if (rect) {
             const x = e.clientX - rect.left;
-            const divIndex = Math.floor((x / rect.width) * 50);
-            setActiveDiv(Math.min(Math.max(divIndex, 0), 49));
-            setTime((divIndex + 1) * 72); // 72 seconds per div (3600 seconds / 50 divs)
+            const divIndex = Math.floor((x / rect.width) * 60);
+            setActiveDiv(Math.min(Math.max(divIndex, 0), 59));
+            setTime((divIndex + 1) * 60); // 60 seconds per div (1 minute)
         }
     };
 
@@ -98,6 +98,11 @@ const PomodoroTimer = () => {
         setIsMinimized(prev => !prev);
     };
 
+    const handlePresetClick = (minutes: number) => {
+        setTime(minutes * 60);
+        setActiveDiv(minutes - 1);
+    };
+
     if (isMinimized) {
         return (
             <Button 
@@ -143,7 +148,7 @@ const PomodoroTimer = () => {
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                     >
-                        {[...Array(50)].map((_, index) => (
+                        {[...Array(60)].map((_, index) => (
                             <div
                                 key={index}
                                 className={`h-8 w-full mx-px ${index <= activeDiv ? 'bg-red-500' :
@@ -156,14 +161,23 @@ const PomodoroTimer = () => {
                     </div>
 
                     <div className="flex justify-between items-center text-xs mb-4">
-                        <div className="flex space-x-2">
+                        {isRunning ? (
                             <Button onClick={handleCancel} variant="ghost" size="sm">
                                 Cancel
                             </Button>
-                            <Button onClick={handleRestart} variant="ghost" size="sm">
-                                Restart
-                            </Button>
-                        </div>
+                        ) : (
+                            <div className="flex space-x-2">
+                                <Button onClick={() => handlePresetClick(5)} variant="ghost" size="sm">
+                                    5 min
+                                </Button>
+                                <Button onClick={() => handlePresetClick(10)} variant="ghost" size="sm">
+                                    10 min
+                                </Button>
+                                <Button onClick={() => handlePresetClick(25)} variant="ghost" size="sm">
+                                    25 min
+                                </Button>
+                            </div>
+                        )}
                         <Button variant="ghost" size="sm">
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -173,7 +187,7 @@ const PomodoroTimer = () => {
 
             <div className="flex justify-between items-end">
                 <Button onClick={handlePlayPause} variant="ghost" size="sm" className="">
-                    {isRunning ? 'pause' : 'play'}
+                    {isRunning ? 'pause' : 'start'}
                 </Button>
                 <div className={`${isRunning && !isHovering ? 'text-3xl font-light' : 'text-3xl font-medium'}`}>
                     {formatTime(time)}
