@@ -43,9 +43,9 @@ const PomodoroTimer = () => {
         const rect = sliderRef.current?.getBoundingClientRect();
         if (rect) {
             const x = e.clientX - rect.left;
-            const divIndex = Math.floor((x / rect.width) * 50);
-            setActiveDiv(Math.min(Math.max(divIndex, 0), 49));
-            setTime((divIndex + 1) * 72); // 72 seconds per div (3600 seconds / 50 divs)
+            const divIndex = Math.floor((x / rect.width) * 60);
+            setActiveDiv(Math.min(Math.max(divIndex, 0), 59));
+            setTime((divIndex + 1) * 60); // 60 seconds per div (1 minute)
         }
     };
 
@@ -143,7 +143,7 @@ const PomodoroTimer = () => {
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                     >
-                        {[...Array(50)].map((_, index) => (
+                        {[...Array(60)].map((_, index) => (
                             <div
                                 key={index}
                                 className={`h-8 w-full mx-px ${index <= activeDiv ? 'bg-red-500' :
@@ -173,7 +173,7 @@ const PomodoroTimer = () => {
 
             <div className="flex justify-between items-end">
                 <Button onClick={handlePlayPause} variant="ghost" size="sm" className="">
-                    {isRunning ? 'pause' : 'play'}
+                    {isRunning ? 'pause' : 'start'}
                 </Button>
                 <div className={`${isRunning && !isHovering ? 'text-3xl font-light' : 'text-3xl font-medium'}`}>
                     {formatTime(time)}
