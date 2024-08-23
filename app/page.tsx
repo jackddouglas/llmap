@@ -94,15 +94,15 @@ interface EdgeLabelProps {
 }
 
 const EdgeLabel = ({ query, fromPosition, toPosition }: EdgeLabelProps) => {
-  const midX = (fromPosition.x + toPosition.x) / 2;
-  const midY = (fromPosition.y + toPosition.y) / 2;
+  const path = calculateGridPath(fromPosition, toPosition);
+  const midPoint = path[Math.floor(path.length / 2)];
 
   return (
     <div
       className="absolute bg-gray-800 text-white px-2 py-1 rounded-md text-sm"
       style={{
-        left: `${midX}px`,
-        top: `${midY}px`,
+        left: `${midPoint.x}px`,
+        top: `${midPoint.y}px`,
         transform: 'translate(-50%, -50%)',
         maxWidth: '200px',
         wordWrap: 'break-word',
@@ -134,6 +134,27 @@ interface GridPoint {
   x: number;
   y: number;
 }
+
+const calculateGridPath = (from: GridPoint, to: GridPoint): GridPoint[] => {
+  const path: GridPoint[] = [from];
+  let current = { ...from };
+
+  // Move horizontally
+  while (current.x !== to.x) {
+    const newX = current.x + (to.x > current.x ? 50 : -50);
+    path.push({ x: newX, y: current.y });
+    current = { x: newX, y: current.y };
+  }
+
+  // Move vertically
+  while (current.y !== to.y) {
+    const newY = current.y + (to.y > current.y ? 50 : -50);
+    path.push({ x: current.x, y: newY });
+    current = { x: current.x, y: newY };
+  }
+
+  return path;
+};
 
 export default function Home() {
   const [query, setQuery] = useState('');
