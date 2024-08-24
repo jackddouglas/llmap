@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PomodoroTimer from '@/components/ui/timer';
 import { callLLM } from '@/lib/worker';
-import { UserButton } from '@stackframe/stack';
+import { UserButton, useUser } from '@stackframe/stack';
 
 interface NodeProps {
   id: number;
@@ -146,6 +146,7 @@ export default function Home() {
   const [gridPoints, setGridPoints] = useState<GridPoint[]>([]);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
+  useUser({ or: 'redirect' });
   useEffect(() => {
     setAudio(new Audio('/sounds/click.wav'));
   }, []);
