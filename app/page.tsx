@@ -1,118 +1,14 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { AlertCircle, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import PomodoroTimer from '@/components/ui/timer';
 import { callLLM } from '@/lib/worker';
 import { UserButton, useUser } from '@stackframe/stack';
-
-interface NodeProps {
-  id: number;
-  text: string;
-  position: { x: number; y: number };
-  onDrag: (id: number, x: number, y: number) => void;
-  onQuery: (id: number, query: string) => void;
-  isSelected: boolean;
-  onSelect: (id: number) => void;
-}
-
-const Node = ({ id, text, position, onDrag, onQuery, isSelected, onSelect }: NodeProps) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const nodeRef = useRef<HTMLDivElement>(null);
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    setIsDragging(true);
-    const rect = nodeRef.current?.getBoundingClientRect();
-    if (rect) {
-      setOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      });
-    }
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging) {
-      const newX = e.clientX - offset.x;
-      const newY = e.clientY - offset.y;
-      onDrag(id, newX, newY);
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]);
-
-  return (
-    <div
-      ref={nodeRef}
-      className={`max-w-96 absolute p-6 bg-white border ${isSelected ? 'border-blue-500' : 'border-gray-300'} rounded-lg shadow-lg cursor-move w-[80rem]`}
-      style={{ left: `${position.x}px`, top: `${position.y}px` }}
-      onMouseDown={handleMouseDown}
-      onClick={() => onSelect(id)}
-    >
-      <div className="max-w-7xl">
-        <h3 className="text-sm font-medium mb-3">{text}</h3>
-      </div>
-      <Input
-        type="text"
-        placeholder="Ask a follow-up question"
-        className="w-full mb-2"
-        onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
-          if (e.key === 'Enter') {
-            const input = e.target as HTMLInputElement;
-            onQuery(id, input.value);
-            input.value = '';
-          }
-        }}
-      />
-    </div>
-  );
-};
-
-interface EdgeLabelProps {
-  query: string;
-  fromPosition: { x: number; y: number };
-  toPosition: { x: number; y: number };
-}
-
-const EdgeLabel = ({ query, fromPosition, toPosition }: EdgeLabelProps) => {
-  const midX = (fromPosition.x + toPosition.x) / 2;
-  const midY = (fromPosition.y + toPosition.y) / 2;
-
-  return (
-    <div
-      className="absolute bg-gray-800 text-white px-2 py-1 rounded-md text-sm"
-      style={{
-        left: `${midX}px`,
-        top: `${midY}px`,
-        transform: 'translate(-50%, -50%)',
-        maxWidth: '200px',
-        wordWrap: 'break-word',
-      }}
-    >
-      {query}
-    </div>
-  );
-};
+import { Node } from '@/components/Node';
+import { EdgeLabel } from '@/components/EdgeLabel';
+import { QueryInput } from '@/components/QueryInput';
 
 interface Node {
   id: number;
@@ -279,24 +175,13 @@ export default function Home() {
       </div>
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-3xl">
         <div className="flex flex-col items-center space-y-4">
-          <div className="flex items-center w-full">
-            <Input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Enter your query"
-              className="flex-grow mr-2"
-            />
-            <Button onClick={() => handleQuery()} className="mr-2">Submit Query</Button>
-            <Button
-              onClick={handleDeleteSelected}
-              variant="destructive"
-              disabled={selectedNodes.length === 0}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Selected ({selectedNodes.length})
-            </Button>
-          </div>
+          <QueryInput
+            query={query}
+            setQuery={setQuery}
+            handleQuery={() => handleQuery()}
+            handleDeleteSelected={handleDeleteSelected}
+            selectedNodesCount={selectedNodes.length}
+          />
           {firstQuery && (
             <div className="text-sm font-medium text-gray-500 text-center w-full">
               First Query: {firstQuery}
