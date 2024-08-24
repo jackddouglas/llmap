@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PomodoroTimer from '@/components/ui/timer';
 import { callLLM } from '@/lib/worker';
+import { UserButton } from '@stackframe/stack';
 
 interface NodeProps {
   id: number;
@@ -195,19 +196,19 @@ export default function Home() {
           newPosition = snapToGrid(Math.random() * (window.innerWidth - 350), Math.random() * (window.innerHeight - 200));
         }
       }
-      
+
       const newNode = {
         id: Date.now(),
         text: response,
         position: newPosition,
       };
       setNodes(prevNodes => [...prevNodes, newNode]);
-      
+
       if (audio) {
         audio.currentTime = 0;
         audio.play();
       }
-      
+
       if (parentId !== null) {
         const parentNode = nodes.find(node => node.id === parentId);
         if (parentNode) {
@@ -246,14 +247,14 @@ export default function Home() {
   };
 
   const handleNodeSelect = (id: number) => {
-    setSelectedNodes(prev => 
+    setSelectedNodes(prev =>
       prev.includes(id) ? prev.filter(nodeId => nodeId !== id) : [...prev, id]
     );
   };
 
   const handleDeleteSelected = () => {
     setNodes(nodes.filter(node => !selectedNodes.includes(node.id)));
-    setEdges(edges.filter(edge => 
+    setEdges(edges.filter(edge =>
       !selectedNodes.includes(edge.from) && !selectedNodes.includes(edge.to)
     ));
     setSelectedNodes([]);
@@ -269,7 +270,9 @@ export default function Home() {
           style={{ left: `${point.x}px`, top: `${point.y}px` }}
         />
       ))}
-
+      <div className='absolute top-4 left-4'>
+        <UserButton />
+      </div>
       <div className="absolute top-4 right-4 z-10">
         <PomodoroTimer />
       </div>
@@ -284,9 +287,9 @@ export default function Home() {
               className="flex-grow mr-2"
             />
             <Button onClick={() => handleQuery()} className="mr-2">Submit Query</Button>
-            <Button 
-              onClick={handleDeleteSelected} 
-              variant="destructive" 
+            <Button
+              onClick={handleDeleteSelected}
+              variant="destructive"
               disabled={selectedNodes.length === 0}
             >
               <Trash2 className="mr-2 h-4 w-4" />
