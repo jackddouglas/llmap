@@ -9,6 +9,7 @@ interface QueryInputProps {
   handleQuery: () => void;
   handleDeleteSelected: () => void;
   selectedNodesCount: number;
+  isLoading: boolean;
 }
 
 export const QueryInput: React.FC<QueryInputProps> = ({
@@ -17,6 +18,7 @@ export const QueryInput: React.FC<QueryInputProps> = ({
   handleQuery,
   handleDeleteSelected,
   selectedNodesCount,
+  isLoading,
 }) => {
   return (
     <div className="flex items-center w-full">
@@ -27,7 +29,9 @@ export const QueryInput: React.FC<QueryInputProps> = ({
         placeholder="Enter your query"
         className="flex-grow mr-2"
       />
-      <Button onClick={handleQuery} className="mr-2">Submit Query</Button>
+      <Button onClick={handleQuery} className="mr-2" disabled={isLoading}>
+        {isLoading ? 'Loading...' : 'Submit Query'}
+      </Button>
       <Button
         onClick={handleDeleteSelected}
         variant="destructive"
