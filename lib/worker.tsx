@@ -1,12 +1,10 @@
 import OpenAI from 'openai';
 
-// Initialize the OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true // Add this line
+  dangerouslyAllowBrowser: true
 });
 
-// Function to generate query response using OpenAI
 export const callLLM = async (query: string) => {
   try {
     const response = await openai.chat.completions.create({

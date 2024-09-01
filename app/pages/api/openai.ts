@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const response = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [{ role: "user", content: query }],
-        max_tokens: 100,
+        max_tokens: 300,
       });
       res.status(200).json({ content: response.choices[0].message.content });
     } catch (error) {
