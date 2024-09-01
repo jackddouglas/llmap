@@ -9,8 +9,11 @@ export const callLLM = async (query: string) => {
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: query }],
-      max_tokens: 200,
+      messages: [
+        { role: "system", content: "Please format your response in markdown." },
+        { role: "user", content: query }
+      ],
+      max_tokens: 500,
     });
     return response.choices[0].message.content;
   } catch (error) {
