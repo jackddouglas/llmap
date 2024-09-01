@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useUser } from '@stackframe/stack';
+import { useState, useEffect, useCallback } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import PomodoroTimer from '@/components/ui/timer';
 import { callLLM } from '@/lib/worker';
-import { UserButton, useUser } from '@stackframe/stack';
+import { UserButton } from '@stackframe/stack';
 import { Node } from '@/components/Node';
 import { EdgeLabel } from '@/components/EdgeLabel';
 import { QueryInput } from '@/components/QueryInput';
@@ -32,7 +33,7 @@ interface GridPoint {
   y: number;
 }
 
-export default function Home() {
+function MainContent() {
   const [query, setQuery] = useState('');
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -42,6 +43,7 @@ export default function Home() {
   const [gridPoints, setGridPoints] = useState<GridPoint[]>([]);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedText, setSelectedText] = useState<string>('');
 
   useUser({ or: 'redirect' });
   useEffect(() => {
@@ -74,11 +76,12 @@ export default function Home() {
   };
 
   const handleQuery = async (parentId: number | null = null, query: string) => {
-    if (isLoading) return; // Prevent multiple requests
+    if (isLoading) return;
     try {
       setIsLoading(true);
       setError(null);
-      const response = await callLLM(query);
+      const fullQuery = selectedText ? `${query}\n\nSelected text: "${selectedText}"` : query;
+      const response = await callLLM(fullQuery);
       let newPosition: { x: number; y: number };
 
       if (parentId === null) {
@@ -124,6 +127,7 @@ export default function Home() {
         setFirstQuery(query);
       }
       setQuery('');
+      setSelectedText(''); // Clear selected text after query
     } catch (err) {
       setError('Failed to get response from LLM. Please try again.');
       console.error(err); // Log the error for debugging
@@ -245,8 +249,14 @@ export default function Home() {
           onQuery={(id: number, query: string) => handleQuery(id, query)}
           isSelected={selectedNodes.includes(node.id)}
           onSelect={handleNodeSelect}
+          selectedText={selectedText}
+          onTextSelect={setSelectedText}
         />
       ))}
     </div>
   );
+}
+
+export default function Home() {
+  return <MainContent />;
 }

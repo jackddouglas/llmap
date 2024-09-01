@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
+import ReactMarkdown from 'react-markdown';
 
 interface NodeProps {
   id: number;
@@ -9,9 +10,11 @@ interface NodeProps {
   onQuery: (id: number, query: string) => void;
   isSelected: boolean;
   onSelect: (id: number) => void;
+  selectedText: string;
+  onTextSelect: (text: string) => void;
 }
 
-export const Node: React.FC<NodeProps> = ({ id, text, position, onDrag, onQuery, isSelected, onSelect }) => {
+export const Node: React.FC<NodeProps> = ({ id, text, position, onDrag, onQuery, isSelected, onSelect, selectedText, onTextSelect }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -39,6 +42,13 @@ export const Node: React.FC<NodeProps> = ({ id, text, position, onDrag, onQuery,
     setIsDragging(false);
   };
 
+  const handleTextSelection = useCallback(() => {
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) {
+      onTextSelect(selection.toString());
+    }
+  }, [onTextSelect]);
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -61,13 +71,13 @@ export const Node: React.FC<NodeProps> = ({ id, text, position, onDrag, onQuery,
       onMouseDown={handleMouseDown}
       onClick={() => onSelect(id)}
     >
-      <div className="max-w-7xl">
-        <h3 className="text-sm font-medium mb-3">{text}</h3>
+      <div className="max-w-7xl" onMouseUp={handleTextSelection}>
+        <ReactMarkdown className="prose">{text}</ReactMarkdown>
       </div>
       <Input
         type="text"
         placeholder="Ask a follow-up question"
-        className="w-full mb-2"
+        className="w-full mt-4"
         onKeyPress={async (e: React.KeyboardEvent<HTMLInputElement>) => {
           if (e.key === 'Enter') {
             const input = e.target as HTMLInputElement;
@@ -76,6 +86,11 @@ export const Node: React.FC<NodeProps> = ({ id, text, position, onDrag, onQuery,
           }
         }}
       />
+      {selectedText && (
+        <div className="mt-2 text-sm text-gray-500 opacity-75">
+          &ldquo;{selectedText}&rdquo;
+        </div>
+      )}
     </div>
   );
 };
