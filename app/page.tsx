@@ -73,7 +73,7 @@ export default function Home() {
     };
   };
 
-  const handleQuery = async (parentId: number | null = null) => {
+  const handleQuery = async (parentId: number | null = null, query: string) => {
     if (isLoading) return; // Prevent multiple requests
     try {
       setIsLoading(true);
@@ -184,7 +184,7 @@ export default function Home() {
           <QueryInput
             query={query}
             setQuery={setQuery}
-            handleQuery={() => handleQuery()}
+            handleQuery={() => handleQuery(null, query)}
             handleDeleteSelected={handleDeleteSelected}
             selectedNodesCount={selectedNodes.length}
             isLoading={isLoading}
@@ -242,10 +242,7 @@ export default function Home() {
           text={node.text}
           position={node.position}
           onDrag={handleDrag}
-          onQuery={(id: number, query: string) => {
-            setQuery(query);
-            handleQuery(id);
-          }}
+          onQuery={(id: number, query: string) => handleQuery(id, query)}
           isSelected={selectedNodes.includes(node.id)}
           onSelect={handleNodeSelect}
         />
