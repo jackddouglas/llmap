@@ -41,6 +41,7 @@ export default function Home() {
   const [firstQuery, setFirstQuery] = useState<string | null>(null);
   const [gridPoints, setGridPoints] = useState<GridPoint[]>([]);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useUser({ or: 'redirect' });
   useEffect(() => {
@@ -72,8 +73,10 @@ export default function Home() {
     };
   };
 
-  const handleQuery = async (parentId: number | null = null) => {
+  const handleQuery = async (parentId: number | null = null, query: string) => {
+    if (isLoading) return; // Prevent multiple requests
     try {
+      setIsLoading(true);
       setError(null);
       const response = await callLLM(query);
       let newPosition: { x: number; y: number };
@@ -94,9 +97,9 @@ export default function Home() {
         }
       }
 
-      const newNode = {
+      const newNode: Node = {
         id: Date.now(),
-        text: response,
+        text: response || '', // Use an empty string as fallback
         position: newPosition,
       };
       setNodes(prevNodes => [...prevNodes, newNode]);
@@ -123,6 +126,9 @@ export default function Home() {
       setQuery('');
     } catch (err) {
       setError('Failed to get response from LLM. Please try again.');
+      console.error(err); // Log the error for debugging
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -178,9 +184,10 @@ export default function Home() {
           <QueryInput
             query={query}
             setQuery={setQuery}
-            handleQuery={() => handleQuery()}
+            handleQuery={() => handleQuery(null, query)}
             handleDeleteSelected={handleDeleteSelected}
             selectedNodesCount={selectedNodes.length}
+            isLoading={isLoading}
           />
           {firstQuery && (
             <div className="text-sm font-medium text-gray-500 text-center w-full">
@@ -235,10 +242,7 @@ export default function Home() {
           text={node.text}
           position={node.position}
           onDrag={handleDrag}
-          onQuery={(id: number, query: string) => {
-            setQuery(query);
-            handleQuery(id);
-          }}
+          onQuery={(id: number, query: string) => handleQuery(id, query)}
           isSelected={selectedNodes.includes(node.id)}
           onSelect={handleNodeSelect}
         />

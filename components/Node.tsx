@@ -68,10 +68,10 @@ export const Node: React.FC<NodeProps> = ({ id, text, position, onDrag, onQuery,
         type="text"
         placeholder="Ask a follow-up question"
         className="w-full mb-2"
-        onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
+        onKeyPress={async (e: React.KeyboardEvent<HTMLInputElement>) => {
           if (e.key === 'Enter') {
             const input = e.target as HTMLInputElement;
-            onQuery(id, input.value);
+            await onQuery(id, input.value);
             input.value = '';
           }
         }}

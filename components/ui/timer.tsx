@@ -3,6 +3,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal } from 'lucide-react';
 import { FiMinimize, FiMaximize2 } from "react-icons/fi";
+import { PiTimerBold } from "react-icons/pi";
+
 
 
 const PomodoroTimer = () => {
@@ -105,13 +107,13 @@ const PomodoroTimer = () => {
 
     if (isMinimized) {
         return (
-            <Button 
-                variant="ghost" 
-                size="sm" 
+            <Button
+                variant="ghost"
+                size="sm"
                 className="fixed top-8 right-8"
                 onClick={handleMinimizeToggle}
             >
-                <FiMaximize2 />
+                <PiTimerBold />
             </Button>
         );
     }
@@ -130,9 +132,9 @@ const PomodoroTimer = () => {
                     onChange={(e) => setFocus(e.target.value)}
                     className="w-full"
                 />
-                <Button 
-                    variant="ghost" 
-                    size="sm" 
+                <Button
+                    variant="ghost"
+                    size="sm"
                     className="ml-2"
                     onClick={handleMinimizeToggle}
                 >
