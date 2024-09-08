@@ -120,7 +120,8 @@ const PomodoroTimer = () => {
 
     return (
         <div
-            className="bg-white p-4 rounded-lg shadow-md min-w-96 max-w-md mx-auto"
+            className="bg-white p-4 rounded-lg shadow-md min-w-80 max-w-md mx-auto" 
+            style={{ width: 'calc(100% - 2rem)', maxWidth: '400px' }}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
         >

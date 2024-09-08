@@ -18,6 +18,8 @@ export const Node: React.FC<NodeProps> = ({ id, text, position, onDrag, onQuery,
   const [isDragging, setIsDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const nodeRef = useRef<HTMLDivElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const maxLength = 100; // Set your desired max length here
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsDragging(true);
@@ -49,6 +51,8 @@ export const Node: React.FC<NodeProps> = ({ id, text, position, onDrag, onQuery,
     }
   }, [onTextSelect]);
 
+  const displayedText = isExpanded ? text : text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -72,7 +76,13 @@ export const Node: React.FC<NodeProps> = ({ id, text, position, onDrag, onQuery,
       onClick={() => onSelect(id)}
     >
       <div className="max-w-7xl" onMouseUp={handleTextSelection}>
-        <ReactMarkdown className="prose">{text}</ReactMarkdown>
+        <ReactMarkdown className="prose">{displayedText}</ReactMarkdown>
+        {text.length > maxLength && !isExpanded && (
+          <button onClick={() => setIsExpanded(true)} className="text-blue-500">Read more</button>
+        )}
+        {isExpanded && (
+          <button onClick={() => setIsExpanded(false)} className="text-blue-500">Read less</button>
+        )}
       </div>
       <Input
         type="text"

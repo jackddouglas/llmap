@@ -44,6 +44,9 @@ function MainContent() {
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedText, setSelectedText] = useState<string>('');
+  const [scale, setScale] = useState(1); // Add scale state
+  const [isDragging, setIsDragging] = useState(false); 
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null); 
 
   useUser({ or: 'redirect' });
   useEffect(() => {
@@ -53,8 +56,10 @@ function MainContent() {
   const generateGrid = useCallback(() => {
     const gridSize = 50;
     const points: GridPoint[] = [];
-    for (let x = 0; x < window.innerWidth; x += gridSize) {
-      for (let y = 0; y < window.innerHeight; y += gridSize) {
+    const width = window.innerWidth + 2000; // Extend width
+    const height = window.innerHeight + 2000; // Extend height
+    for (let x = -1000; x < width; x += gridSize) { // Start from -1000
+      for (let y = -1000; y < height; y += gridSize) { // Start from -1000
         points.push({ x, y });
       }
     }
@@ -167,92 +172,149 @@ function MainContent() {
     setSelectedNodes([]);
   };
 
+  const handleWheel = (event: WheelEvent) => {
+    event.preventDefault();
+    const newScale = Math.min(Math.max(scale - event.deltaY * 0.005, 0.5), 2); 
+    setScale(newScale);
+  };
+
+  useEffect(() => {
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, [scale]);
+
+  const handleMouseDown = (event: MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: event.clientX, y: event.clientY });
+  };
+
+  const handleMouseMove = (event: MouseEvent) => {
+    if (isDragging && dragStart) {
+      const dx = event.clientX - dragStart.x;
+      const dy = event.clientY - dragStart.y;
+
+      // Update grid points based on drag
+      setGridPoints(prevPoints => prevPoints.map(point => ({
+        x: point.x + dx * 0.2, // @Oleg @Jack update the number here to change drag speed
+        y: point.y + dy * 0.2
+      })));
+
+      // Update "node" or card  positions based on drag
+      setNodes(prevNodes => prevNodes.map(node => ({
+        ...node,
+        position: {
+          x: node.position.x + dx * 0.2,
+          y: node.position.y + dy * 0.2
+        }
+      })));
+
+      setDragStart({ x: event.clientX, y: event.clientY });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setDragStart(null);
+  };
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragStart]);
+
   return (
     <div className="relative w-full h-screen p-4 overflow-hidden">
-      {/* Render grid points */}
-      {gridPoints.map((point, index) => (
-        <div
-          key={index}
-          className="absolute w-1 h-1 bg-gray-200 rounded-full"
-          style={{ left: `${point.x}px`, top: `${point.y}px` }}
-        />
-      ))}
-      <div className='absolute top-4 left-4'>
-        <UserButton />
-      </div>
-      <div className="absolute top-4 right-4 z-10">
-        <PomodoroTimer />
-      </div>
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-3xl">
-        <div className="flex flex-col items-center space-y-4">
-          <QueryInput
-            query={query}
-            setQuery={setQuery}
-            handleQuery={() => handleQuery(null, query)}
-            handleDeleteSelected={handleDeleteSelected}
-            selectedNodesCount={selectedNodes.length}
-            isLoading={isLoading}
-          />
-          {firstQuery && (
-            <div className="text-sm font-medium text-gray-500 text-center w-full">
-              First Query: {firstQuery}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {error && (
-        <Alert variant="destructive" className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        <defs>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7"
-            refX="0" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#4a5568" />
-          </marker>
-        </defs>
-        {edges.map((edge, index) => (
-          <line
+      <div style={{ transform: `scale(${scale})`, transformOrigin: '0 0' }}>
+        {gridPoints.map((point, index) => (
+          <div
             key={index}
-            x1={edge.fromPosition.x + 150}
-            y1={edge.fromPosition.y + 50}
-            x2={edge.toPosition.x + 150}
-            y2={edge.toPosition.y + 50}
-            stroke="#4a5568"
-            strokeWidth="2"
-            markerEnd="url(#arrowhead)"
+            className="absolute w-1 h-1 bg-gray-300 rounded-full"
+            style={{ left: `${point.x}px`, top: `${point.y}px` }}
           />
         ))}
-      </svg>
+        <div className='absolute top-4 left-4'>
+          <UserButton />
+        </div>
+        <div className="absolute top-4 right-4 z-10">
+          <PomodoroTimer />
+        </div>
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-3xl">
+          <div className="flex flex-col items-center space-y-4">
+            <QueryInput
+              query={query}
+              setQuery={setQuery}
+              handleQuery={() => handleQuery(null, query)}
+              handleDeleteSelected={handleDeleteSelected}
+              selectedNodesCount={selectedNodes.length}
+              isLoading={isLoading}
+            />
+            {firstQuery && (
+              <div className="text-sm font-medium text-gray-500 text-center w-full">
+                First Query: {firstQuery}
+              </div>
+            )}
+          </div>
+        </div>
 
-      {edges.map((edge, index) => (
-        <EdgeLabel
-          key={`label-${index}`}
-          query={edge.query}
-          fromPosition={edge.fromPosition}
-          toPosition={edge.toPosition}
-        />
-      ))}
+        {error && (
+          <Alert variant="destructive" className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-md">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {nodes.map(node => (
-        <Node
-          key={node.id}
-          id={node.id}
-          text={node.text}
-          position={node.position}
-          onDrag={handleDrag}
-          onQuery={(id: number, query: string) => handleQuery(id, query)}
-          isSelected={selectedNodes.includes(node.id)}
-          onSelect={handleNodeSelect}
-          selectedText={selectedText}
-          onTextSelect={setSelectedText}
-        />
-      ))}
+        <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
+          <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7"
+              refX="0" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#4a5568" />
+            </marker>
+          </defs>
+          {edges.map((edge, index) => (
+            <line
+              key={index}
+              x1={edge.fromPosition.x + 150}
+              y1={edge.fromPosition.y + 50}
+              x2={edge.toPosition.x + 150}
+              y2={edge.toPosition.y + 50}
+              stroke="#4a5568"
+              strokeWidth="2"
+              markerEnd="url(#arrowhead)"
+            />
+          ))}
+        </svg>
+
+        {edges.map((edge, index) => (
+          <EdgeLabel
+            key={`label-${index}`}
+            query={edge.query}
+            fromPosition={edge.fromPosition}
+            toPosition={edge.toPosition}
+          />
+        ))}
+
+        {nodes.map(node => (
+          <Node
+            key={node.id}
+            id={node.id}
+            text={node.text}
+            position={node.position}
+            onDrag={handleDrag}
+            onQuery={(id: number, query: string) => handleQuery(id, query)}
+            isSelected={selectedNodes.includes(node.id)}
+            onSelect={handleNodeSelect}
+            selectedText={selectedText}
+            onTextSelect={setSelectedText}
+          />
+        ))}
+      </div>
     </div>
   );
 }
