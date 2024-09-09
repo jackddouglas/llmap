@@ -47,12 +47,13 @@ function MainContent() {
   const [scale, setScale] = useState(1); // Add scale state
   const [isDragging, setIsDragging] = useState(false); 
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null); 
+  //
 
   useUser({ or: 'redirect' });
   useEffect(() => {
     setAudio(new Audio('/sounds/click.wav'));
   }, []);
-
+      
   const generateGrid = useCallback(() => {
     const gridSize = 50;
     const points: GridPoint[] = [];
