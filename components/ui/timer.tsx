@@ -189,8 +189,8 @@ const PomodoroTimer = () => {
             )}
 
             <div className="flex justify-between items-end">
-                <Button onClick={handlePlayPause} variant="ghost" size="sm" className="">
-                    {isRunning ? 'pause' : 'start'}
+                <Button onClick={handlePlayPause} variant="default" size="sm" className="">
+                    {isRunning ? 'Pause' : 'Start'}
                 </Button>
                 <div className={`${isRunning && !isHovering ? 'text-3xl font-light' : 'text-3xl font-medium'}`}>
                     {formatTime(time)}
